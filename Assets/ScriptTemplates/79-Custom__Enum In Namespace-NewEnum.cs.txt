@@ -1,0 +1,7 @@
+namespace Main
+{
+    public enum #SCRIPTNAME#
+    {
+        #NOTRIM#
+    }
+}

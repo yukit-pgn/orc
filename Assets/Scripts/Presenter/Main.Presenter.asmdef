@@ -1,0 +1,20 @@
+{
+    "name": "Main.Presenter",
+    "references": [
+        "GUID:2bafac87e7f4b9b418d9448d219b01ab",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:30cc9ee43edd67d469497d6e7956e684",
+        "GUID:63006637301f3be438f8f29529e71b52",
+        "GUID:0c68ee42740c3f34d89ffec66725598c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,64 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UniRx;
+using UniRx.Triggers;
+using Main.Service;
+
+namespace Main.Presenter
+{
+    public class #SCRIPTNAME# : MonoBehaviour
+    {
+        /// <summary>
+        /// 初期設定
+        /// </summary>
+        void Start()
+        {
+            SetUpModels();
+
+            SetUpViews();
+
+            Bind();
+
+            SetEvents();
+
+            SetUpdateEvents();
+        }
+
+        /// <summary>
+        /// Modelの設定
+        /// </summary>
+        void SetUpModels()
+        {
+        }
+
+
+        /// <summary>
+        /// Viewの設定
+        /// </summary>
+        void SetUpViews()
+        {
+        }
+
+        /// <summary>
+        /// Modelの監視
+        /// </summary>
+        void Bind()
+        {
+        }
+
+        /// <summary>
+        /// Viewのイベントの設定
+        /// </summary>
+        void SetEvents()
+        {
+        }
+
+        /// <summary>
+        /// Update, FixedUpdateのイベントの設定
+        /// </summary>
+        void SetUpdateEvents()
+        {
+        }
+    }
+}

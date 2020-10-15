@@ -1,0 +1,19 @@
+{
+    "name": "Main.View",
+    "references": [
+        "GUID:30cc9ee43edd67d469497d6e7956e684",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:63006637301f3be438f8f29529e71b52",
+        "GUID:172fb944441765442af25fbc6e202efe"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

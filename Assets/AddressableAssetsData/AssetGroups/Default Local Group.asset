@@ -17,6 +17,18 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: da950827bdca1fe46b2b433b17120d8d
   m_SerializeEntries:
+  - m_GUID: 0d21b206cdf99c84dab4456e5769dfaa
+    m_Address: Condition
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 102900000, guid: 0d21b206cdf99c84dab4456e5769dfaa, type: 3}
+    m_TargetAsset: {fileID: 102900000, guid: 0d21b206cdf99c84dab4456e5769dfaa, type: 3}
+  - m_GUID: d9351f1c13cdc1446a1bd193fc28d6be
+    m_Address: 1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 2800000, guid: d9351f1c13cdc1446a1bd193fc28d6be, type: 3}
+    m_TargetAsset: {fileID: 2800000, guid: d9351f1c13cdc1446a1bd193fc28d6be, type: 3}
   - m_GUID: e5e133992658b2f4b84643ba04718614
     m_Address: AudioMaster
     m_ReadOnly: 0

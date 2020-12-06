@@ -32,10 +32,11 @@ MonoBehaviour:
     - UniRx
     - ES3
     - UniTask
+    - Assembly-CSharp
     - UniTask.Linq
+    - Main.Data
     - Main.Service
     - DOTween.Modules
-    - Main.Data
     - Main.Presenter
     - UniTask.TextMeshPro
     - Main.View

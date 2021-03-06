@@ -34,15 +34,10 @@ MonoBehaviour:
     - UniTask
     - Assembly-CSharp
     - UniTask.Linq
-    - Main.Data
-    - Main.Service
-    - DOTween.Modules
-    - Main.Presenter
+    - Assembly-CSharp-firstpass
     - UniTask.TextMeshPro
-    - Main.View
     - UniTask.DOTween
     - UniTask.Addressables
-    - Main.Model
     - UniTask.Editor
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0

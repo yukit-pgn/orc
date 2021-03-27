@@ -6,6 +6,7 @@ using UniRx.Triggers;
 using Main.Service;
 using Main.View.Home;
 using Main.Data;
+using Main.Data.Home;
 
 namespace Main.Presenter.Home
 {

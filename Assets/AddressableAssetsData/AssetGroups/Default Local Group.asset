@@ -21,20 +21,32 @@ MonoBehaviour:
     m_Address: Condition
     m_ReadOnly: 0
     m_SerializedLabels: []
-    m_MainAsset: {fileID: 102900000, guid: 0d21b206cdf99c84dab4456e5769dfaa, type: 3}
-    m_TargetAsset: {fileID: 102900000, guid: 0d21b206cdf99c84dab4456e5769dfaa, type: 3}
-  - m_GUID: d9351f1c13cdc1446a1bd193fc28d6be
-    m_Address: 1
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: 6ce6501477cfbba4090754ffbaa6d5c2
+    m_Address: Effect
     m_ReadOnly: 0
     m_SerializedLabels: []
-    m_MainAsset: {fileID: 2800000, guid: d9351f1c13cdc1446a1bd193fc28d6be, type: 3}
-    m_TargetAsset: {fileID: 2800000, guid: d9351f1c13cdc1446a1bd193fc28d6be, type: 3}
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
   - m_GUID: e5e133992658b2f4b84643ba04718614
     m_Address: AudioMaster
     m_ReadOnly: 0
     m_SerializedLabels: []
     m_MainAsset: {fileID: 0}
     m_TargetAsset: {fileID: 0}
+  - m_GUID: cdddac2f5000e2f4b89a56fb35934e2f
+    m_Address: ConditionList
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: b62e8fc697d20d546858406382292b81
+    m_Address: EffectList
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 4900000, guid: b62e8fc697d20d546858406382292b81, type: 3}
+    m_TargetAsset: {fileID: 4900000, guid: b62e8fc697d20d546858406382292b81, type: 3}
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 739e40023f5b47e43bc40b4edd68e481, type: 2}
   m_SchemaSet:

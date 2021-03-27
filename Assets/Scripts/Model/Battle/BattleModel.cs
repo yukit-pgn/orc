@@ -34,12 +34,6 @@ namespace Main.Model.Battle
         public void Setup()
         {}
 
-        // void SetDeck(DeckData deckData)
-        // {
-        //     deckData.cardList.ForEach(card => deck.AddRange(Enumerable.Repeat(card.cardData, card.count)));
-        //     deck = deck.OrderBy(_ => Guid.NewGuid()).ToList();
-        // }
-
         /// <summary>
         /// ターン開始
         /// </summary>
@@ -48,7 +42,7 @@ namespace Main.Model.Battle
             // ターンカウント
             turn.Value++;
             // MP回復
-            mp.Value = Mathf.Min(100, mp.Value + Mathf.Min(5, turn.Value) * 10);
+            mp.Value = Mathf.Min(100, Mathf.Min(5, turn.Value) * 10);
             // 使用枚数のリセット
             UsedHandCount = 0;
             // バリアのターン数消費
@@ -74,6 +68,14 @@ namespace Main.Model.Battle
         }
 
         /// <summary>
+        /// 使用したカード数を加算する
+        /// </summary>
+        public void IncreaseUsedHandCount()
+        {
+            UsedHandCount++;
+        }
+
+        /// <summary>
         /// プレイヤーの属性を変更する
         /// </summary>
         public void SetPlayerAttribure(AttributeType type)
@@ -84,9 +86,54 @@ namespace Main.Model.Battle
         /// <summary>
         /// 攻撃力を計算する
         /// </summary>
-        public float CulcAttack(int attack, AttributeType type)
+        public (float, AttributeType) CulcAttack(int attack, AttributeType type)
         {
-            return type == PlayerAttribute ? attack * 1.25f : attack;
+            // return (type == PlayerAttribute ? attack * 1.3f : attack, type);
+            return (attack, type);
+        }
+
+        /// <summary>
+        /// 攻撃力からダメージを計算しHPを減らす
+        /// </summary>
+        public void RecieveDamage((float attack, AttributeType type) info)
+        {
+            // int damage = (int)(info.attack * DamageMagnification(info.type));
+            int damage = (int)info.attack;
+
+            hp.Value -= damage;
+        }
+
+        /// <summary>
+        /// 属性相性によるダメージ倍率を取得する
+        /// </summary>
+        float DamageMagnification(AttributeType attackerType)
+        {
+            switch (attackerType)
+            {
+                case AttributeType.Fire:
+                    switch (PlayerAttribute)
+                    {
+                        case AttributeType.Water: return 0.8f;
+                        case AttributeType.Lightning: return 1.2f;
+                        default: return 1f;
+                    }
+                case AttributeType.Water:
+                    switch (PlayerAttribute)
+                    {
+                        case AttributeType.Lightning: return 0.8f;
+                        case AttributeType.Fire: return 1.2f;
+                        default: return 1f;
+                    }
+                case AttributeType.Lightning:
+                    switch (PlayerAttribute)
+                    {
+                        case AttributeType.Fire: return 0.8f;
+                        case AttributeType.Water: return 1.2f;
+                        default: return 1f;
+                    }
+                default:
+                    return 1f;
+            }
         }
 
         /// <summary>

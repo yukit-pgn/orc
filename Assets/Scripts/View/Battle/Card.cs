@@ -1,8 +1,9 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.EventSystems;
 using TMPro;
 using UniRx;
 using UniRx.Triggers;
@@ -10,6 +11,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Main.Data;
 using Main.Service;
+using Main.Extension;
 
 namespace Main.View.Battle
 {
@@ -26,23 +28,21 @@ namespace Main.View.Battle
 
         CardDataService cardDataService;
 
-        Subject<CardData> OnSelect;
+        Subject<CardData> OnSelect = new Subject<CardData>();
+        Subject<Unit> OnDrag = new Subject<Unit>();
+        Subject<(CardData, Vector3)> OnRelease = new Subject<(CardData, Vector3)>();
 
         // カードデータ
         public CardData CardData { get; private set; }
         // 選択可能か
         public bool Selectable { get; set; }
 
-        void Awake()
-        {
-            GetComponent<ObservableEventTrigger>().OnPointerClickAsObservable().Subscribe(_ => Debug.Log(text));
-        }
-
         /// <summary>
         /// セットアップ
         /// </summary>
-        public async void Setup(CardData cardData)
+        public async UniTask Setup(CardData cardData)
         {
+
             this.CardData = cardData;
             cardDataService = CardDataService.Instance;
             ilustBGSR.sprite = await cardDataService.GetConditionSprite(cardData.conditionID);
@@ -69,7 +69,50 @@ namespace Main.View.Battle
             cardFront.SetActive(false);
             cardBack.SetActive(true);
 
-            GetComponent<ObservableEventTrigger>().OnPointerClickAsObservable().Subscribe(_ => OnClick());
+            var trigger = GetComponent<MyObservableEventTrigger>();
+            // ロングタップ
+            trigger.OnLongTapAsObservable(0.5f).Subscribe(LongTap).AddTo(this);
+            // 押し込み
+            trigger.OnPointerDownAsObservable().Subscribe(PointerDown).AddTo(this);
+            // ドラッグ
+            trigger.OnDragAsObservable().Subscribe(Drag).AddTo(this);
+            // 離す
+            trigger.OnPointerUpAsObservable().Subscribe(PointerUp).AddTo(this);
+        }
+
+        Vector3 ScreenToWorldPoint(Vector2 screenPos)
+        {
+            return Camera.main.ScreenToWorldPoint((Vector3)screenPos + Vector3.forward * 20);
+        }
+
+        void LongTap(PointerEventData pointer)
+        {
+            if (!Selectable) return;
+
+            OnSelect.OnNext(CardData);
+        }
+
+        void PointerDown(PointerEventData pointer)
+        {
+            if (!Selectable) return;
+
+            transform.DOScale(Vector3.one * 1.5f, 0.3f);
+        }
+
+        void Drag(PointerEventData pointer)
+        {
+            if (!Selectable) return;
+
+            transform.position = ScreenToWorldPoint(pointer.position);
+            OnDrag.OnNext(Unit.Default);
+        }
+
+        void PointerUp(PointerEventData pointer)
+        {
+            if (!Selectable) return;
+
+            transform.DOScale(Vector3.one, 0.3f);
+            OnRelease.OnNext((CardData, ScreenToWorldPoint(pointer.position)));
         }
 
         /// <summary>
@@ -77,8 +120,15 @@ namespace Main.View.Battle
         /// </summary>
         public async UniTask Move(Vector3 pos, float duration)
         {
-            transform.DOMove(pos, duration);
-            await UniTask.Delay((int)(duration * 1000));
+            if (duration <= 0f)
+            {
+                transform.position = pos;
+            }
+            else
+            {
+                transform.DOMove(pos, duration);
+                await UniTask.Delay((int)(duration * 1000));
+            }
         }
 
         /// <summary>
@@ -98,13 +148,9 @@ namespace Main.View.Battle
             await UniTask.Delay((int)(duration * 500));
         }
 
-        void OnClick()
-        {
-            if (!Selectable) return;
-
-            OnSelect.OnNext(CardData);
-        }
-
+        /// <summary>
+        /// ソーティングオーダーを変更する
+        /// </summary>
         public void SetSortingOrder(int order)
         {
             GetComponent<SortingGroup>().sortingOrder = order;
@@ -113,6 +159,16 @@ namespace Main.View.Battle
         public IObservable<CardData> OnSelectAsObservable()
         {
             return OnSelect;
+        }
+
+        public IObservable<Unit> OnDragAsObservable()
+        {
+            return OnDrag;
+        }
+
+        public IObservable<(CardData, Vector3)> OnReleaseAsObservable()
+        {
+            return OnRelease;
         }
     }
 }

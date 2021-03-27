@@ -11,8 +11,8 @@ namespace Main.Service
 {
     public class CardDataService : SingletonMonoBehaviour<CardDataService>
     {
-        static readonly string conditionListKey = "conditionList";
-        static readonly string effectListKey = "effectList";
+        static readonly string conditionListKey = "ConditionList";
+        static readonly string effectListKey = "EffectList";
 
         // 条件リスト
         List<ConditionData> conditionList = null;
@@ -23,10 +23,10 @@ namespace Main.Service
         {
             base.Awake();
 
-            // var conditionCSV = await Addressables.LoadAssetAsync<TextAsset>(conditionListKey);
-            // var effectCSV = await Addressables.LoadAssetAsync<TextAsset>(effectListKey);
-            // conditionList = CSVtoConditionList(conditionCSV);
-            // effectList = CSVtoEffectList(effectCSV);
+            var conditionCSV = await Addressables.LoadAssetAsync<TextAsset>(conditionListKey);
+            var effectCSV = await Addressables.LoadAssetAsync<TextAsset>(effectListKey);
+            conditionList = CSVtoConditionList(conditionCSV);
+            effectList = CSVtoEffectList(effectCSV);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Main.Service
         List<ConditionData> CSVtoConditionList(TextAsset textAsset)
         {
             return textAsset.text.Split(new string[] { "\r\n" }, StringSplitOptions.None)
-            .Where(line => line.Substring(0, 2) == "##")
+            .Where(line => line.Length == 1 || (line.Length >= 2 && line.Substring(0, 2) != "##"))
             .Select(line => 
             {
                 var l = line.Split(',');
@@ -50,7 +50,7 @@ namespace Main.Service
         List<EffectData> CSVtoEffectList(TextAsset textAsset)
         {
             return textAsset.text.Split(new string[] { "\r\n" }, StringSplitOptions.None)
-            .Where(line => line.Substring(0, 2) == "##")
+            .Where(line => line.Length == 1 || (line.Length >= 2 && line.Substring(0, 2) != "##"))
             .Select(line => 
             {
                 var l = line.Split(',');

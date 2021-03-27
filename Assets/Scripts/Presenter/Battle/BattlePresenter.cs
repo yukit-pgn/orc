@@ -11,6 +11,7 @@ using Main.Model.Battle;
 using Main.View.Battle;
 using Main.Service;
 using Main.Data;
+using Main.Data.Battle;
 
 namespace Main.Presenter.Battle
 {
@@ -20,6 +21,8 @@ namespace Main.Presenter.Battle
         [SerializeField] Transform myDeckParent;
         [SerializeField] Transform enemyDeckParent;
         [SerializeField] CardExplanation cardExplanation;
+        [SerializeField] BattleUIView uiView;
+
         [SerializeField] Vector3 myDeckPosition;
         [SerializeField] Vector3 enemyDeckPosition;
         [SerializeField] Vector3 myHandPosition;
@@ -82,28 +85,34 @@ namespace Main.Presenter.Battle
         /// </summary>
         void SetUpViews()
         {
+            // cardExplanationのセットアップ
+            cardExplanation.Setup();
+
+            // UIViewのセットアップ
+            uiView.Setup();
+            
             // 自分のデッキを読み込み
             var cardDataList = new List<CardData>();
             playerDataService.GetCurrentDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
             // シャッフル&山札を生成
-            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(c =>
+            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(async c =>
             {
                 var cardGO = Instantiate(card_Prefab, myDeckPosition, Quaternion.identity, myDeckParent);
                 var card = cardGO.GetComponent<Card>();
-                card.Setup(c);
-                cardGO.SetActive(false);
+                await card.Setup(c);
+                // cardGO.SetActive(false);
                 myDeck.Add(card);
             });
             // 相手のデッキを読み込み
             cardDataList = new List<CardData>();
             enemyDataService.GetDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
             // シャッフル&山札を生成
-            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(c =>
+            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(async c =>
             {
                 var cardGO = Instantiate(card_Prefab, enemyDeckPosition, Quaternion.identity, enemyDeckParent);
                 var card = cardGO.GetComponent<Card>();
-                card.Setup(c);
-                cardGO.SetActive(false);
+                await card.Setup(c);
+                // cardGO.SetActive(false);
                 enemyDeck.Add(card);
             });
         }
@@ -113,26 +122,79 @@ namespace Main.Presenter.Battle
         /// </summary>
         void Bind()
         {
+            myBattleModel.GetHP().Subscribe(value => Debug.Log("Your HP: " + value)).AddTo(this);
+            myBattleModel.GetMP().Subscribe(value => Debug.Log("Your MP: " + value)).AddTo(this);
+            enemyBattleModel.GetHP().Subscribe(value => Debug.Log("Enemy`s HP: " + value)).AddTo(this);
+            enemyBattleModel.GetMP().Subscribe(value => Debug.Log("Enemy`s MP: " + value)).AddTo(this);
         }
 
         /// <summary>
         /// Viewのイベントの設定
         /// </summary>
-        void SetEvents()
+        async void SetEvents()
         {
-            myDeck.ForEach(c => c.OnSelectAsObservable().Subscribe(data =>
+            await UniTask.WaitUntil(() => myDeck.Count >= 10);
+            // 自分のCardの監視
+            myDeck.ForEach(c =>
             {
-                SetMyHandSelectable(false);
-                selectedCard = c;
-                cardExplanation.Show(data, data.cost <= myBattleModel.GetMP().Value && CheckCondition(data.conditionID));
-            })
-            .AddTo(this));
+                c.OnSelectAsObservable().Subscribe(data =>
+                {
+                    cardExplanation.Show(data, data.cost <= myBattleModel.GetMP().Value && CheckCondition(data.conditionID));
+                })
+                .AddTo(this);
 
-            cardExplanation.OnUseAsObservable().Subscribe(data =>
+                c.OnDragAsObservable().Subscribe(_ =>
+                {
+                    cardExplanation.Close();
+                })
+                .AddTo(this);
+
+                c.OnReleaseAsObservable().Subscribe(tpl =>
+                {
+                    if (tpl.Item2.y > 0f && tpl.Item1.cost <= myBattleModel.GetMP().Value)
+                    {
+                        selectedCard = c;
+                        SetMyHandSelectable(false);
+                        UseCard(true, tpl.Item1);
+                    }
+                    else
+                    {
+                        ArrangeHand(true).Forget();
+                    }
+                })
+                .AddTo(this);
+            });
+
+            // UIViewの監視
+            uiView.OnClickAsObservable().Subscribe(type =>
             {
-                UseCard(true, data);
+                switch (type)
+                {
+                    case ButtonType.TurnEnd:
+                        if (isMyTurn)
+                        {
+                            uiView.SetButtonActive(ButtonType.TurnEnd, false);
+                            ChangeTurn(false);
+                        }
+                        break;
+                }
             })
             .AddTo(this);
+
+            // // cardExplanationの監視
+            // cardExplanation.OnUseAsObservable().Subscribe(data =>
+            // {
+            //     UseCard(true, data);
+            // })
+            // .AddTo(this);
+            // cardExplanation.OnBackAsObservable().Subscribe(_ =>
+            // {
+            //     if (isMyTurn)
+            //     {
+            //         SetMyHandSelectable(true);
+            //     }
+            // })
+            // .AddTo(this);
         }
 
         /// <summary>
@@ -151,7 +213,10 @@ namespace Main.Presenter.Battle
             // 手札を補充
             await UniTask.WhenAll(DrawCard(true, 4), DrawCard(false, 4));
             // 先攻決め
-            isMyTurn = UnityEngine.Random.Range(0f, 1f) < 0.5f;
+            // isMyTurn = UnityEngine.Random.Range(0f, 1f) < 0.5f;
+            isMyTurn = true;
+
+            StartTurn(true);
         }
 
         /// <summary>
@@ -162,7 +227,7 @@ namespace Main.Presenter.Battle
             var battleModel = isMyTurn ? myBattleModel : enemyBattleModel;
             battleModel.TurnStart();
 
-            if (isFirst)
+            if (!isFirst)
             {
                 // 先攻1ターン目でなければカードをひく
                 await DrawCard(isMyTurn, 1);
@@ -172,7 +237,23 @@ namespace Main.Presenter.Battle
             {
                 // 自分のターンであればカードを選択可能にする
                 SetMyHandSelectable(true);
+                // ターンエンドボタンを有効化
+                uiView.SetButtonActive(ButtonType.TurnEnd, true);
             }
+            else
+            {
+                AI();
+            }
+        }
+
+        void ChangeTurn(bool isMe)
+        {
+            isMyTurn = isMe;
+            // カードを選択不能にする
+            SetMyHandSelectable(false);
+
+            // 次のターンを開始する
+            StartTurn(false);
         }
 
         /// <summary>
@@ -205,13 +286,13 @@ namespace Main.Presenter.Battle
 
             hand.AddRange(cards);
 
-            await ArangeHand(isMe);
+            await ArrangeHand(isMe);
         }
 
         /// <summary>
         /// 手札の位置と描画順を調整する
         /// </summary>
-        async UniTask ArangeHand(bool isMe)
+        async UniTask ArrangeHand(bool isMe)
         {
             var hand = isMe ? myHand : enemyHand;
             var pos = isMe ? myHandPosition : enemyHandPosition;
@@ -291,6 +372,16 @@ namespace Main.Presenter.Battle
             var hand = isMe ? myHand : enemyHand;
             var graveyard = isMe ? myGraveyard : enemyGraveyard;
 
+            // ターン中使用カード数を加算
+            attackerModel.IncreaseUsedHandCount();
+
+            // 手札から削除し墓地に加える
+            hand.Remove(selectedCard);
+            graveyard.Add(selectedCard);
+
+            // 手札の位置を調整
+            ArrangeHand(isMe).Forget();
+
             // カードを表示
             selectedCard.Move(openPos, 0.3f).Forget();
             if (!isMe)
@@ -303,9 +394,6 @@ namespace Main.Presenter.Battle
             // カードを墓地に
             selectedCard.Move(graveyardPos, 0.3f).Forget();
 
-            hand.Remove(selectedCard);
-            graveyard.Add(selectedCard);
-
             // MPを消費
             attackerModel.UseMp(cardData.cost);
 
@@ -317,6 +405,16 @@ namespace Main.Presenter.Battle
 
             // 効果2を処理する
             await ProcessEffect(isMe, cardData.effect2ID);
+
+            if (isMyTurn)
+            {
+                // if (myBattleModel.UsedHandCount )
+                SetMyHandSelectable(true);
+            }
+            else
+            {
+                AI();
+            }
         }
 
         /// <summary>
@@ -354,6 +452,8 @@ namespace Main.Presenter.Battle
             switch (effectID)
             {
                 case 1:
+                    var attackInfo = attackerModel.CulcAttack(10, AttributeType.Fire);
+                    defenderModel.RecieveDamage(attackInfo);
                     break;
             }
         }
@@ -361,6 +461,30 @@ namespace Main.Presenter.Battle
         async UniTask DiscardCard(bool isMe, int count)
         {
             // To Do
+        }
+
+        async void AI()
+        {
+            await UniTask.Delay(UnityEngine.Random.Range(500, 1000));
+
+            if (enemyHand.Count > 0 && enemyBattleModel.UsedHandCount < 2)
+            {
+                var card = enemyHand[UnityEngine.Random.Range(0, enemyHand.Count)];
+
+                if(card.CardData.cost <= enemyBattleModel.GetMP().Value)
+                {
+                    selectedCard = card;
+                    UseCard(false, card.CardData);
+                }
+                else
+                {
+                    ChangeTurn(true);
+                }
+            }
+            else
+            {
+                ChangeTurn(true);
+            }
         }
     }
 }

@@ -4,6 +4,7 @@
     {
         Fire,
         Water,
-        Lightning
+        Lightning,
+        None
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
-using Main.Data;
+using Main.Data.Home;
 
 namespace Main.View.Home
 {
@@ -16,8 +16,8 @@ namespace Main.View.Home
 
         public void SetUp()
         {
-            playButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.Play));
-            settingButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.Setting));
+            playButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.Play)).AddTo(this);
+            settingButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.Setting)).AddTo(this);
         }
 
         public IObservable<ButtonType> OnClickAsObservable()

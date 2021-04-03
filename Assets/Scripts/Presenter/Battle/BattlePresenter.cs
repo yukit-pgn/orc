@@ -122,10 +122,10 @@ namespace Main.Presenter.Battle
         /// </summary>
         void Bind()
         {
-            myBattleModel.GetHP().Subscribe(value => Debug.Log("Your HP: " + value)).AddTo(this);
-            myBattleModel.GetMP().Subscribe(value => Debug.Log("Your MP: " + value)).AddTo(this);
-            enemyBattleModel.GetHP().Subscribe(value => Debug.Log("Enemy`s HP: " + value)).AddTo(this);
-            enemyBattleModel.GetMP().Subscribe(value => Debug.Log("Enemy`s MP: " + value)).AddTo(this);
+            myBattleModel.GetHP().Subscribe(uiView.SetMyHP).AddTo(this);
+            myBattleModel.GetMP().Subscribe(v => uiView.SetMyMP(v, myBattleModel.MaxMP)).AddTo(this);
+            enemyBattleModel.GetHP().Subscribe(uiView.SetEnemyHP).AddTo(this);
+            enemyBattleModel.GetMP().Subscribe(v => uiView.SetEnemyMP(v, enemyBattleModel.MaxMP)).AddTo(this);
         }
 
         /// <summary>
@@ -137,9 +137,9 @@ namespace Main.Presenter.Battle
             // 自分のCardの監視
             myDeck.ForEach(c =>
             {
-                c.OnSelectAsObservable().Subscribe(data =>
+                c.OnLongTapAsObservable().Subscribe(data =>
                 {
-                    cardExplanation.Show(data, data.cost <= myBattleModel.GetMP().Value && CheckCondition(data.conditionID));
+                    cardExplanation.Show(data);
                 })
                 .AddTo(this);
 
@@ -151,6 +151,8 @@ namespace Main.Presenter.Battle
 
                 c.OnReleaseAsObservable().Subscribe(tpl =>
                 {
+                    cardExplanation.ResetCanShow();
+
                     if (tpl.Item2.y > 0f && tpl.Item1.cost <= myBattleModel.GetMP().Value)
                     {
                         selectedCard = c;
@@ -246,6 +248,9 @@ namespace Main.Presenter.Battle
             }
         }
 
+        /// <summary>
+        /// ターン切り替え
+        /// </summary>
         void ChangeTurn(bool isMe)
         {
             isMyTurn = isMe;
@@ -406,6 +411,12 @@ namespace Main.Presenter.Battle
             // 効果2を処理する
             await ProcessEffect(isMe, cardData.effect2ID);
 
+            // 勝敗を判定する
+            var finish = CheckGame();
+
+            // 勝敗が決していればリターン
+            if (finish) { return; }
+
             if (isMyTurn)
             {
                 // if (myBattleModel.UsedHandCount )
@@ -458,11 +469,54 @@ namespace Main.Presenter.Battle
             }
         }
 
+        /// <summary>
+        /// 手札を捨てる
+        /// </summary>
         async UniTask DiscardCard(bool isMe, int count)
         {
             // To Do
         }
 
+        /// <summary>
+        /// 勝敗を判定する
+        /// </summary>
+        bool CheckGame()
+        {
+            if (myBattleModel.GetHP().Value <= 0)
+            {
+                Finish(false);
+                return true;
+            }
+
+            if (enemyBattleModel.GetHP().Value <= 0)
+            {
+                Finish(true);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// ゲーム終了フェーズ
+        /// </summary>
+        async void Finish(bool winnerIsMe)
+        {
+            uiView.SetButtonActive(ButtonType.TurnEnd, false);
+
+            if (winnerIsMe)
+            {
+                await uiView.Win();
+            }
+            else
+            {
+                await uiView.Lose();
+            }
+        }
+
+        /// <summary>
+        /// 敵AIの行動
+        /// </summary>
         async void AI()
         {
             await UniTask.Delay(UnityEngine.Random.Range(500, 1000));

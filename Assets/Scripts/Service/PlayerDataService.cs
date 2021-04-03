@@ -20,6 +20,9 @@ namespace Main.Service
         // 現在選択中のデッキ
         public int currentDeckNumber = 0;
 
+        /// <summary>
+        /// 初期化時
+        /// </summary>
         protected override void Awake()
         {
             base.Awake();
@@ -33,6 +36,9 @@ namespace Main.Service
             .ToList();
         }
 
+        /// <summary>
+        /// 現在のデッキデータを取得
+        /// </summary>
         public DeckData GetCurrentDeckData()
         {
             return deckList[currentDeckNumber];

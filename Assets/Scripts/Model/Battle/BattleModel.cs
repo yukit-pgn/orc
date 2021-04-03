@@ -27,6 +27,8 @@ namespace Main.Model.Battle
         public AttributeType PlayerAttribute { get; private set; }
         // このターンに使用した枚数
         public int UsedHandCount { get; private set; } = 0;
+        // MP最大値
+        public int MaxMP { get; private set; } = 0;
 
         /// <summary>
         /// セットアップ
@@ -41,8 +43,10 @@ namespace Main.Model.Battle
         {
             // ターンカウント
             turn.Value++;
+            // MP最大値更新
+            MaxMP =  Mathf.Min(100, Mathf.Min(5, turn.Value) * 10);
             // MP回復
-            mp.Value = Mathf.Min(100, Mathf.Min(5, turn.Value) * 10);
+            mp.Value = MaxMP;
             // 使用枚数のリセット
             UsedHandCount = 0;
             // バリアのターン数消費

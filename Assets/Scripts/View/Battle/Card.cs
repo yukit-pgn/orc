@@ -28,8 +28,11 @@ namespace Main.View.Battle
 
         CardDataService cardDataService;
 
-        Subject<CardData> OnSelect = new Subject<CardData>();
+        // ロングタップ時イベント
+        Subject<CardData> OnLongTap = new Subject<CardData>();
+        // ドラッグ時イベント
         Subject<Unit> OnDrag = new Subject<Unit>();
+        // タッチリリース時イベント
         Subject<(CardData, Vector3)> OnRelease = new Subject<(CardData, Vector3)>();
 
         // カードデータ
@@ -80,25 +83,40 @@ namespace Main.View.Battle
             trigger.OnPointerUpAsObservable().Subscribe(PointerUp).AddTo(this);
         }
 
+        /// <summary>
+        /// スクリーン座標をワールド座標に変換する
+        /// </summary>
         Vector3 ScreenToWorldPoint(Vector2 screenPos)
         {
             return Camera.main.ScreenToWorldPoint((Vector3)screenPos + Vector3.forward * 20);
         }
 
+        /// <summary>
+        /// ロングタップ時処理
+        /// </summary>
         void LongTap(PointerEventData pointer)
         {
             if (!Selectable) return;
 
-            OnSelect.OnNext(CardData);
+            OnLongTap.OnNext(CardData);
         }
 
+        /// <summary>
+        /// 押し込み時処理
+        /// </summary>
         void PointerDown(PointerEventData pointer)
         {
             if (!Selectable) return;
 
+            // 拡大
             transform.DOScale(Vector3.one * 1.5f, 0.3f);
+            // レイヤーを最前列に
+            SetSortingOrder(100);
         }
 
+        /// <summary>
+        /// ドラッグ時処理
+        /// </summary>
         void Drag(PointerEventData pointer)
         {
             if (!Selectable) return;
@@ -107,6 +125,9 @@ namespace Main.View.Battle
             OnDrag.OnNext(Unit.Default);
         }
 
+        /// <summary>
+        /// タッチリリース時処理
+        /// </summary>
         void PointerUp(PointerEventData pointer)
         {
             if (!Selectable) return;
@@ -144,7 +165,7 @@ namespace Main.View.Battle
             cardBack.SetActive(!front);
 
             transform.rotation = Quaternion.AngleAxis(90, Vector3.up);
-            transform.DORotate(Vector3.zero, duration / 2f);
+            transform.DORotateQuaternion(Quaternion.AngleAxis(-1, Vector3.up), duration / 2f);
             await UniTask.Delay((int)(duration * 500));
         }
 
@@ -156,16 +177,25 @@ namespace Main.View.Battle
             GetComponent<SortingGroup>().sortingOrder = order;
         }
 
-        public IObservable<CardData> OnSelectAsObservable()
+        /// <summary>
+        /// ロングタップ時イベントを取得
+        /// </summary>
+        public IObservable<CardData> OnLongTapAsObservable()
         {
-            return OnSelect;
+            return OnLongTap;
         }
 
+        /// <summary>
+        /// ドラッグ時イベントを取得
+        /// </summary>
         public IObservable<Unit> OnDragAsObservable()
         {
             return OnDrag;
         }
 
+        /// <summary>
+        /// タッチリリース時イベントを取得
+        /// </summary>
         public IObservable<(CardData, Vector3)> OnReleaseAsObservable()
         {
             return OnRelease;

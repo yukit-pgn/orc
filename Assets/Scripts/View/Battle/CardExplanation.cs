@@ -23,7 +23,7 @@ namespace Main.View.Battle
         [SerializeField] TextMeshProUGUI explanationText;
 
         CardData currentCardData;
-        bool isUsable;
+        bool canShow;
 
         public void Setup()
         {
@@ -33,10 +33,11 @@ namespace Main.View.Battle
         /// <summary>
         /// カード情報を表示する
         /// </summary>
-        public void Show(CardData cardData, bool isUsable)
+        public void Show(CardData cardData)
         {
+            if (!canShow) { return; }
+
             currentCardData = cardData;
-            this.isUsable = isUsable;
 
             frameRT.localScale = Vector3.zero;
             frameRT.DOScale(Vector3.one, 0.3f);
@@ -48,7 +49,16 @@ namespace Main.View.Battle
         /// </summary>
         public void Close()
         {
+            canShow = false;
             gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 表示不可能状態をリセットする
+        /// </summary>
+        public void ResetCanShow()
+        {
+            canShow = true;
         }
     }
 }

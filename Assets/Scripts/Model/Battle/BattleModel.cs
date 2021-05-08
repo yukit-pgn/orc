@@ -11,7 +11,7 @@ namespace Main.Model.Battle
     public class BattleModel
     {
         // HP
-        IntReactiveProperty hp = new IntReactiveProperty(100);
+        IntReactiveProperty hp = new IntReactiveProperty(10);
         // MP
         IntReactiveProperty mp = new IntReactiveProperty(0);
         // 経過ターン数

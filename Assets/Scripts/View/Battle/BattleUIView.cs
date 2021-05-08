@@ -97,6 +97,9 @@ namespace Main.View.Battle
             enemyMPText.text = $"MP {value} / {maxValue}";
         }
 
+        /// <summary>
+        /// 勝利時アニメーション
+        /// </summary>
         public async UniTask Win()
         {
             winText.gameObject.SetActive(true);
@@ -113,6 +116,9 @@ namespace Main.View.Battle
             await UniTask.Delay(100);
         }
 
+        /// <summary>
+        /// 敗北時アニメーション
+        /// </summary>
         public async UniTask Lose()
         {
             loseText.gameObject.SetActive(true);
@@ -125,7 +131,7 @@ namespace Main.View.Battle
         }
 
         /// <summary>
-        /// クリック時イベントを取得
+        /// ボタンクリック時イベントを取得
         /// </summary>
         public IObservable<ButtonType> OnClickAsObservable()
         {

@@ -4,16 +4,14 @@ using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
 using Main.Service;
-using Main.View.Home;
-using Main.Data;
-using Main.Data.Home;
+using Main.View.Menu;
+using Main.Data.Menu;
 
-namespace Main.Presenter.Home
+namespace Main.Presenter.Menu
 {
-    public class HomePresenter : MonoBehaviour
+    public class MenuPresenter : MonoBehaviour
     {
-        [SerializeField] HomeUIView uiView;
-
+        [SerializeField] MenuUIView uiView;
         /// <summary>
         /// 初期設定
         /// </summary>
@@ -43,7 +41,8 @@ namespace Main.Presenter.Home
         /// </summary>
         void SetUpViews()
         {
-            uiView.SetUp();
+            // uiViewのセットアップ
+            uiView.Setup();
         }
 
         /// <summary>
@@ -58,6 +57,7 @@ namespace Main.Presenter.Home
         /// </summary>
         void SetEvents()
         {
+            // uiViewの監視
             uiView.OnClickAsObservable().Subscribe(OnClick).AddTo(this);
         }
 
@@ -71,13 +71,18 @@ namespace Main.Presenter.Home
         /// <summary>
         /// ボタンクリック時
         /// </summary>
-        void OnClick(ButtonType type)
+        async void OnClick(ButtonType type)
         {
             switch (type)
             {
-                case ButtonType.Play:
+                case ButtonType.BattleMenu:
+                    await uiView.ChangeMenu(MenuType.Battle);
                     break;
-                case ButtonType.Setting:
+                case ButtonType.DeckMenu:
+                    await uiView.ChangeMenu(MenuType.Deck);
+                    break;
+                case ButtonType.CreateMenu:
+                    await uiView.ChangeMenu(MenuType.Create);
                     break;
             }
         }

@@ -113,8 +113,6 @@ namespace Main.Service
         /// <summary>
         /// CardDataから名前を取得
         /// </summary>
-        /// <param name="cardData"></param>
-        /// <returns></returns>
         public async UniTask<string> GetCardName(CardData cardData)
         {
             var name = (await GetEffectData(cardData.effect1ID)).name;
@@ -127,6 +125,23 @@ namespace Main.Service
                 name += "&" + (await GetEffectData(cardData.effect2ID)).name;
             }
             return name;
+        }
+
+        /// <summary>
+        /// CardDataからコストを取得
+        /// </summary>
+        public async UniTask<int> GetCardCost(CardData cardData)
+        {
+            int cost = -10 + (await GetEffectData(cardData.effect1ID)).cost;
+            if (cardData.conditionID != 0)
+            {
+                cost -= (await GetConditionData(cardData.conditionID)).cost;
+            }
+            if (cardData.effect2ID != 0)
+            {
+                cost += (await GetEffectData(cardData.effect2ID)).cost;
+            }
+            return Mathf.Max(cost, 0);
         }
     }
 }

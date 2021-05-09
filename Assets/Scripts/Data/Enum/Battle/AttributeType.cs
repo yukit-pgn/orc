@@ -2,9 +2,9 @@
 {
     public enum AttributeType
     {
-        Fire,
-        Water,
-        Lightning,
+        Red,
+        Blue,
+        Green,
         None
     }
 }

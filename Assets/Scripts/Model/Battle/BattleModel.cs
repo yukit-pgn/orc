@@ -11,7 +11,7 @@ namespace Main.Model.Battle
     public class BattleModel
     {
         // HP
-        IntReactiveProperty hp = new IntReactiveProperty(10);
+        IntReactiveProperty hp = new IntReactiveProperty(100);
         // MP
         IntReactiveProperty mp = new IntReactiveProperty(0);
         // 経過ターン数
@@ -44,7 +44,7 @@ namespace Main.Model.Battle
             // ターンカウント
             turn.Value++;
             // MP最大値更新
-            MaxMP =  Mathf.Min(100, Mathf.Min(5, turn.Value) * 10);
+            MaxMP =  Mathf.Min(100, turn.Value * 10);
             // MP回復
             mp.Value = MaxMP;
             // 使用枚数のリセット
@@ -60,7 +60,7 @@ namespace Main.Model.Battle
         /// </summary>
         public void AddHP(int value)
         {
-            hp.Value += value;
+            hp.Value = Mathf.Clamp(hp.Value + value, 0, 100);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Main.Model.Battle
             // int damage = (int)(info.attack * DamageMagnification(info.type));
             int damage = (int)info.attack;
 
-            hp.Value -= damage;
+            AddHP(-damage);
         }
 
         /// <summary>
@@ -114,25 +114,25 @@ namespace Main.Model.Battle
         {
             switch (attackerType)
             {
-                case AttributeType.Fire:
+                case AttributeType.Red:
                     switch (PlayerAttribute)
                     {
-                        case AttributeType.Water: return 0.8f;
-                        case AttributeType.Lightning: return 1.2f;
+                        case AttributeType.Blue: return 0.8f;
+                        case AttributeType.Green: return 1.2f;
                         default: return 1f;
                     }
-                case AttributeType.Water:
+                case AttributeType.Blue:
                     switch (PlayerAttribute)
                     {
-                        case AttributeType.Lightning: return 0.8f;
-                        case AttributeType.Fire: return 1.2f;
+                        case AttributeType.Green: return 0.8f;
+                        case AttributeType.Red: return 1.2f;
                         default: return 1f;
                     }
-                case AttributeType.Lightning:
+                case AttributeType.Green:
                     switch (PlayerAttribute)
                     {
-                        case AttributeType.Fire: return 0.8f;
-                        case AttributeType.Water: return 1.2f;
+                        case AttributeType.Red: return 0.8f;
+                        case AttributeType.Blue: return 1.2f;
                         default: return 1f;
                     }
                 default:

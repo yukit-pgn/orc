@@ -36,6 +36,7 @@ namespace Main.Presenter.Battle
 
         PlayerDataService playerDataService;
         EnemyDataService enemyDataService;
+        CardDataService cardDataService;
         BattleModel myBattleModel;
         BattleModel enemyBattleModel;
         Card selectedCard;
@@ -56,10 +57,11 @@ namespace Main.Presenter.Battle
         {
             playerDataService = PlayerDataService.Instance;
             enemyDataService = EnemyDataService.Instance;
+            cardDataService = CardDataService.Instance;
 
             SetUpModels();
 
-            SetUpViews();
+            await SetUpViews();
 
             Bind();
 
@@ -83,7 +85,7 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// Viewの設定
         /// </summary>
-        void SetUpViews()
+        async UniTask SetUpViews()
         {
             // cardExplanationのセットアップ
             cardExplanation.Setup();
@@ -94,27 +96,32 @@ namespace Main.Presenter.Battle
             // 自分のデッキを読み込み
             var cardDataList = new List<CardData>();
             playerDataService.GetCurrentDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
-            // シャッフル&山札を生成
-            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(async c =>
+            // シャッフル
+            cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
+            // 山札を生成
+            foreach (var cardData in cardDataList)
             {
+                cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
                 var cardGO = Instantiate(card_Prefab, myDeckPosition, Quaternion.identity, myDeckParent);
                 var card = cardGO.GetComponent<Card>();
-                await card.Setup(c);
-                // cardGO.SetActive(false);
+                await card.Setup(cardData);
                 myDeck.Add(card);
-            });
+            }
+
             // 相手のデッキを読み込み
             cardDataList = new List<CardData>();
             enemyDataService.GetDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
-            // シャッフル&山札を生成
-            cardDataList.OrderBy(c => Guid.NewGuid()).ToList().ForEach(async c =>
+            // シャッフル
+            cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
+            // 山札を生成
+            foreach (var cardData in cardDataList)
             {
+                cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
                 var cardGO = Instantiate(card_Prefab, enemyDeckPosition, Quaternion.identity, enemyDeckParent);
                 var card = cardGO.GetComponent<Card>();
-                await card.Setup(c);
-                // cardGO.SetActive(false);
+                await card.Setup(cardData);
                 enemyDeck.Add(card);
-            });
+            }
         }
 
         /// <summary>
@@ -131,41 +138,10 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// Viewのイベントの設定
         /// </summary>
-        async void SetEvents()
+        void SetEvents()
         {
-            await UniTask.WaitUntil(() => myDeck.Count >= 10);
             // 自分のCardの監視
-            myDeck.ForEach(c =>
-            {
-                c.OnLongTapAsObservable().Subscribe(data =>
-                {
-                    cardExplanation.Show(data);
-                })
-                .AddTo(this);
-
-                c.OnDragAsObservable().Subscribe(_ =>
-                {
-                    cardExplanation.Close();
-                })
-                .AddTo(this);
-
-                c.OnReleaseAsObservable().Subscribe(tpl =>
-                {
-                    cardExplanation.ResetCanShow();
-
-                    if (tpl.Item2.y > 0f && tpl.Item1.cost <= myBattleModel.GetMP().Value)
-                    {
-                        selectedCard = c;
-                        SetMyHandSelectable(false);
-                        UseCard(true, tpl.Item1);
-                    }
-                    else
-                    {
-                        ArrangeHand(true).Forget();
-                    }
-                })
-                .AddTo(this);
-            });
+            myDeck.ForEach(SetMyCardEvents);
 
             // UIViewの監視
             uiView.OnClickAsObservable().Subscribe(type =>
@@ -332,34 +308,68 @@ namespace Main.Presenter.Battle
         }
 
         /// <summary>
+        /// 自分のCardのイベント設定
+        /// </summary>
+        void SetMyCardEvents(Card c)
+        {
+            c.OnLongTapAsObservable().Subscribe(data =>
+            {
+                cardExplanation.Show(data);
+            })
+            .AddTo(this);
+
+            c.OnDragAsObservable().Subscribe(_ =>
+            {
+                cardExplanation.Close();
+            })
+            .AddTo(this);
+
+            c.OnReleaseAsObservable().Subscribe(tpl =>
+            {
+                cardExplanation.ResetCanShow();
+
+                if (tpl.Item2.y > 0f && tpl.Item1.cost <= myBattleModel.GetMP().Value && CheckCondition(true, tpl.Item1.conditionID))
+                {
+                    selectedCard = c;
+                    SetMyHandSelectable(false);
+                    UseCard(true, tpl.Item1);
+                }
+                else
+                {
+                    ArrangeHand(true).Forget();
+                }
+            })
+            .AddTo(this);
+        }
+
+        /// <summary>
         /// カードの条件を満たしているか確認する
         /// </summary>
         /// <param name="conditionID"></param>
         /// <returns></returns>
-        bool CheckCondition(int conditionID)
+        bool CheckCondition(bool isMe, int conditionID)
         {
+            var attackerModel = isMe ? myBattleModel : enemyBattleModel;
+            var defenderModel = isMe ? enemyBattleModel : myBattleModel;
+            var attackerHand = isMe ? myHand : enemyHand;
+            var defenderHand = isMe ? enemyHand : myHand;
+
             switch (conditionID)
             {
                 case 0:
                     return true;
                 case 1:
-                    return myBattleModel.GetHP().Value > 10;
+                    return attackerModel.GetHP().Value > 10;
                 case 2:
-                    return myBattleModel.GetHP().Value > 20;
+                    return attackerModel.GetHP().Value <= 50;
                 case 3:
-                    return myBattleModel.GetHP().Value > 30;
+                    return attackerModel.GetHP().Value >= 50;
                 case 4:
-                    return myBattleModel.GetHP().Value <= 70;
+                    return attackerHand.Count >= 2;
                 case 5:
-                    return myBattleModel.GetHP().Value <= 50;
+                    return attackerHand.Count == 1;
                 case 6:
-                    return myBattleModel.GetHP().Value <= 30;
-                case 7:
-                    return myBattleModel.GetHP().Value >= 70;
-                case 8:
-                    return myHand.Count >= 2;
-                case 9:
-                    return myBattleModel.GetMP().Value >= 50;
+                    return defenderHand.Count <= 2;
                 default:
                     return false;
             }
@@ -440,13 +450,7 @@ namespace Main.Presenter.Battle
                 case 1:
                     attackerModel.AddHP(-10);
                     break;
-                case 2:
-                    attackerModel.AddHP(-20);
-                    break;
-                case 3:
-                    attackerModel.AddHP(-30);
-                    break;
-                case 8:
+                case 4:
                     await DiscardCard(isMe, 1);
                     break;
             }
@@ -463,8 +467,58 @@ namespace Main.Presenter.Battle
             switch (effectID)
             {
                 case 1:
-                    var attackInfo = attackerModel.CulcAttack(10, AttributeType.Fire);
+                    var attackInfo = attackerModel.CulcAttack(10, AttributeType.Red);
                     defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 2:
+                    attackInfo = attackerModel.CulcAttack(20, AttributeType.Red);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 3:
+                    attackInfo = attackerModel.CulcAttack(30, AttributeType.Red);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 4:
+                    attackInfo = attackerModel.CulcAttack(10, AttributeType.Blue);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 5:
+                    attackInfo = attackerModel.CulcAttack(20, AttributeType.Blue);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 6:
+                    attackInfo = attackerModel.CulcAttack(5, AttributeType.Blue);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 7:
+                    attackInfo = attackerModel.CulcAttack(10, AttributeType.Green);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 8:
+                    attackInfo = attackerModel.CulcAttack(20, AttributeType.Green);
+                    defenderModel.RecieveDamage(attackInfo);
+                    break;
+                case 9:
+                    attackerModel.AddHP(20);
+                    break;
+                case 10:
+                    attackerModel.AddHP(10);
+                    break;
+                case 11:
+                    await DrawCard(isMe, 1);
+                    break;
+                case 12:
+                    var cardData = new CardData(0, 0, 9, 0);
+                    cardData.cost = await cardDataService.GetCardCost(cardData);
+                    await AddCard(isMe, cardData);
+                    break;
+                case 13:
+                    cardData = new CardData(0, 0, 2, 0);
+                    cardData.cost = await cardDataService.GetCardCost(cardData);
+                    await AddCard(isMe, cardData);
+                    break;
+                case 14:
+                    await DrawCard(isMe, 2);
                     break;
             }
         }
@@ -475,6 +529,37 @@ namespace Main.Presenter.Battle
         async UniTask DiscardCard(bool isMe, int count)
         {
             // To Do
+        }
+
+        /// <summary>
+        /// 特定のカードを手札に加える
+        /// </summary>
+        async UniTask AddCard(bool isMe, CardData cardData)
+        {
+            var hand = isMe ? myHand : enemyHand;
+            var openPos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
+            var handPos = isMe ? myHandPosition : enemyHandPosition;
+
+            var cardGO = Instantiate(card_Prefab, openPos, Quaternion.identity, myDeckParent);
+            var card = cardGO.GetComponent<Card>();
+            await card.Setup(cardData, true);
+
+            await UniTask.Delay(1000);
+            
+            if (isMe)
+            {
+                // 自分のであればイベントを設定
+                SetMyCardEvents(card);
+            }
+            else
+            {
+                // 相手のであれば裏返す
+                await card.TurnOver(false, 0.3f);
+            }
+
+            hand.Add(card);
+
+            await ArrangeHand(isMe);
         }
 
         /// <summary>
@@ -525,7 +610,7 @@ namespace Main.Presenter.Battle
             {
                 var card = enemyHand[UnityEngine.Random.Range(0, enemyHand.Count)];
 
-                if(card.CardData.cost <= enemyBattleModel.GetMP().Value)
+                if(card.CardData.cost <= enemyBattleModel.GetMP().Value && CheckCondition(false, card.CardData.conditionID))
                 {
                     selectedCard = card;
                     UseCard(false, card.CardData);

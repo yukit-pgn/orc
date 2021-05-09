@@ -30,7 +30,13 @@ namespace Main.Service
             deckList = Enumerable.Repeat(new DeckData {
                 name = "test",
                 cardList = new List<(CardData cardData, int count)> {
-                    (new CardData(10, 0, 1, 0), 10)
+                    (new CardData(10, 0, 2, 0), 1),
+                    (new CardData(10, 1, 2, 0), 1),
+                    (new CardData(10, 2, 2, 0), 1),
+                    (new CardData(10, 3, 2, 0), 1),
+                    (new CardData(10, 4, 2, 0), 1),
+                    (new CardData(10, 5, 2, 0), 1),
+                    (new CardData(10, 6, 2, 0), 1),
                 }
             }, 1)
             .ToList();

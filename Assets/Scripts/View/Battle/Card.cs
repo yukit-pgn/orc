@@ -43,7 +43,7 @@ namespace Main.View.Battle
         /// <summary>
         /// セットアップ
         /// </summary>
-        public async UniTask Setup(CardData cardData)
+        public async UniTask Setup(CardData cardData, bool front = false)
         {
 
             this.CardData = cardData;
@@ -68,9 +68,9 @@ namespace Main.View.Battle
             }
             nameText.text = (await cardDataService.GetCardName(cardData));
 
-            // 裏向きにセット
-            cardFront.SetActive(false);
-            cardBack.SetActive(true);
+            // 表裏の設定
+            cardFront.SetActive(front);
+            cardBack.SetActive(!front);
 
             var trigger = GetComponent<MyObservableEventTrigger>();
             // ロングタップ

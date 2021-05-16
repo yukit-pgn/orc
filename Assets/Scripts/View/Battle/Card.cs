@@ -24,7 +24,7 @@ namespace Main.View.Battle
         [SerializeField] SpriteRenderer ilustDouble1SR;
         [SerializeField] SpriteRenderer ilustDouble2SR;
         [SerializeField] TextMeshPro nameText;
-        [SerializeField] string text;
+        [SerializeField] TextMeshPro costText;
 
         CardDataService cardDataService;
 
@@ -45,7 +45,11 @@ namespace Main.View.Battle
         /// </summary>
         public async UniTask Setup(CardData cardData, bool front = false)
         {
+            // 表裏の設定
+            cardFront.SetActive(front);
+            cardBack.SetActive(!front);
 
+            // 表示設定
             this.CardData = cardData;
             cardDataService = CardDataService.Instance;
             ilustBGSR.sprite = await cardDataService.GetConditionSprite(cardData.conditionID);
@@ -66,11 +70,8 @@ namespace Main.View.Battle
                 ilustDouble1SR.sprite = await cardDataService.GetEffectSprite(cardData.effect1ID);
                 ilustDouble2SR.sprite = await cardDataService.GetEffectSprite(cardData.effect2ID);
             }
-            nameText.text = (await cardDataService.GetCardName(cardData));
-
-            // 表裏の設定
-            cardFront.SetActive(front);
-            cardBack.SetActive(!front);
+            nameText.text = await cardDataService.GetCardName(cardData);
+            costText.text = (await cardDataService.GetCardCost(cardData)).ToString();
 
             var trigger = GetComponent<MyObservableEventTrigger>();
             // ロングタップ

@@ -26,5 +26,20 @@ namespace Main.Data
             this.effect1ID = effect1ID;
             this.effect2ID = effect2ID;
         }
+
+        public CardData(CardData original)
+        {
+            this.cost = original.cost;
+            this.conditionID = original.conditionID;
+            this.effect1ID = original.effect1ID;
+            this.effect2ID = original.effect2ID;
+        }
+
+        public bool IsSame(CardData cardData)
+        {
+            return this.conditionID == cardData.conditionID &&
+                this.effect1ID == cardData.effect1ID &&
+                this.effect2ID == cardData.effect2ID;
+        }
     }
 }

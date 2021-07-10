@@ -75,10 +75,32 @@ namespace Main.Service
         /// </summary>
         async UniTask<EffectData> GetEffectData(int id)
         {
-            // 条件リストが読み込まれるまで待つ
+            // 効果リストが読み込まれるまで待つ
             await UniTask.WaitWhile(() => effectList == null);
 
             return effectList.First(c => c.id == id);
+        }
+
+        /// <summary>
+        /// 条件リストから条件IDリストを取得
+        /// </summary>
+        public async UniTask<List<int>> GetConditionIDList()
+        {
+            // 条件リストが読み込まれるまで待つ
+            await UniTask.WaitWhile(() => conditionList == null);
+
+            return conditionList.Select(c => c.id).ToList();
+        }
+
+        /// <summary>
+        /// 効果リストから効果IDリストを取得
+        /// </summary>
+        public async UniTask<List<int>> GetEffectIDList()
+        {
+            // 効果リストが読み込まれるまで待つ
+            await UniTask.WaitWhile(() => effectList == null);
+
+            return effectList.Select(c => c.id).ToList();
         }
 
         /// <summary>

@@ -4,6 +4,10 @@
     {
         BattleMenu,
         DeckMenu,
-        CreateMenu
+        CreateMenu,
+        BattleStart,
+        AddCard,
+        LoadDeckData,
+        SaveDeckData
     }
 }

@@ -95,7 +95,7 @@ namespace Main.Presenter.Battle
             
             // 自分のデッキを読み込み
             var cardDataList = new List<CardData>();
-            playerDataService.GetCurrentDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
+            playerDataService.GetCurrentDeckData().cardList.ForEach(c => cardDataList.Add(c));
             // シャッフル
             cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
             // 山札を生成
@@ -110,7 +110,7 @@ namespace Main.Presenter.Battle
 
             // 相手のデッキを読み込み
             cardDataList = new List<CardData>();
-            enemyDataService.GetDeckData().cardList.ForEach(c => cardDataList.AddRange(Enumerable.Repeat(c.cardData, c.count)));
+            enemyDataService.GetDeckData().cardList.ForEach(c => cardDataList.Add(c));
             // シャッフル
             cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
             // 山札を生成

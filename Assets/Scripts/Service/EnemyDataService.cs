@@ -19,8 +19,15 @@ namespace Main.Service
 
             cardDataList = Enumerable.Repeat(new DeckData {
                 name = "test",
-                cardList = new List<(CardData cardData, int count)> {
-                    (new CardData(10, 0, 1, 0), 10)
+                cardList = new List<CardData> {
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
+                    new CardData(10, 0, 1, 0),
                 }
             }, 1)
             .ToList();

@@ -9,6 +9,6 @@ namespace Main.Data
         // デッキ名
         public string name;
         // カードリスト
-        public List<(CardData cardData, int count)> cardList;
+        public List<CardData> cardList;
     }
 }

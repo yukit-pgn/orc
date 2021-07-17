@@ -94,34 +94,10 @@ namespace Main.Presenter.Battle
             uiView.Setup();
             
             // 自分のデッキを読み込み
-            var cardDataList = new List<CardData>();
-            playerDataService.GetCurrentDeckData().cardList.ForEach(c => cardDataList.Add(c));
-            // シャッフル
-            cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
-            // 山札を生成
-            foreach (var cardData in cardDataList)
-            {
-                cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
-                var cardGO = Instantiate(card_Prefab, myDeckPosition, Quaternion.identity, myDeckParent);
-                var card = cardGO.GetComponent<Card>();
-                await card.Setup(cardData);
-                myDeck.Add(card);
-            }
+            await RefillDeck(true);
 
             // 相手のデッキを読み込み
-            cardDataList = new List<CardData>();
-            enemyDataService.GetDeckData().cardList.ForEach(c => cardDataList.Add(c));
-            // シャッフル
-            cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
-            // 山札を生成
-            foreach (var cardData in cardDataList)
-            {
-                cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
-                var cardGO = Instantiate(card_Prefab, enemyDeckPosition, Quaternion.identity, enemyDeckParent);
-                var card = cardGO.GetComponent<Card>();
-                await card.Setup(cardData);
-                enemyDeck.Add(card);
-            }
+            await RefillDeck(false);
         }
 
         /// <summary>
@@ -238,6 +214,32 @@ namespace Main.Presenter.Battle
         }
 
         /// <summary>
+        /// デッキを補充する
+        /// </summary>
+        async UniTask RefillDeck(bool isMe)
+        {
+            var deckData = isMe ? playerDataService.GetCurrentDeckData() : enemyDataService.GetDeckData();
+            var pos = isMe ? myDeckPosition : enemyDeckPosition;
+            var deckParent = isMe ? myDeckParent : enemyDeckParent;
+            var deck = isMe ? myDeck : enemyDeck;
+
+            // var cardDataList = new List<CardData>();
+            // deckData.cardList.ForEach(c => cardDataList.Add(c));
+            // // シャッフル
+            // cardDataList = cardDataList.OrderBy(c => Guid.NewGuid()).ToList();
+            var cardDataList = deckData.cardList.OrderBy(c => Guid.NewGuid()).ToList();
+            // 山札を生成
+            foreach (var cardData in cardDataList)
+            {
+                cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
+                var cardGO = Instantiate(card_Prefab, pos, Quaternion.identity, deckParent);
+                var card = cardGO.GetComponent<Card>();
+                await card.Setup(cardData);
+                deck.Add(card);
+            }
+        }
+
+        /// <summary>
         /// デッキからカードをドローする
         /// </summary>
         async UniTask DrawCard(bool isMe, int count)
@@ -245,7 +247,12 @@ namespace Main.Presenter.Battle
             var deck = isMe ? myDeck : enemyDeck;
             var hand = isMe ? myHand : enemyHand;
             var pos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
-            if (deck == null || deck.Count == 0) { return; }
+            if (deck == null) { return; }
+
+            if (deck.Count < count)
+            {
+                await RefillDeck(isMe);
+            }
 
             var cards = deck.GetRange(0, count);
             deck.RemoveRange(0, count);

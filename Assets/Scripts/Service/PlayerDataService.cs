@@ -55,13 +55,22 @@ namespace Main.Service
         {
             base.Awake();
 
-            deckList = new List<DeckData>();
-            for (int i = 0; i < 10; i++)
+            if (SaveDataService.HasDeckList)
             {
-                deckList.Add(new DeckData {
-                    name = $"デッキ{i}",
-                    cardList = defaultCardList
-                });
+                deckList = SaveDataService.LoadDeckList();
+                Debug.Log("Deck Loaded");
+            }
+            else
+            {    
+                deckList = new List<DeckData>();
+                for (int i = 0; i < 10; i++)
+                {
+                    deckList.Add(new DeckData {
+                        name = $"デッキ{i}",
+                        cardList = defaultCardList
+                    });
+                }
+                SaveDataService.SaveDeckList(deckList);
             }
         }
 
@@ -80,6 +89,8 @@ namespace Main.Service
         {
             deckList[CurrentDeckNumber].name = deckData.name;
             deckList[currentDeckNumber].cardList = deckData.cardList.Select(c => new CardData(c)).ToList();
+
+            SaveDataService.SaveDeckList(deckList);
         }
     }
 }

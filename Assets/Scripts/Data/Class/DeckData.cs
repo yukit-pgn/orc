@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Main.Data
 {
+    [System.Serializable]
     public class DeckData
     {
         // デッキ名

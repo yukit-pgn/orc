@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Main.Data
 {
+    [System.Serializable]
     /// <summary>
     /// カードデータ
     /// </summary>
@@ -34,6 +35,9 @@ namespace Main.Data
             this.effect1ID = original.effect1ID;
             this.effect2ID = original.effect2ID;
         }
+
+        public CardData()
+        {}
 
         public bool IsSame(CardData cardData)
         {

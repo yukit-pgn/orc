@@ -15,7 +15,7 @@ namespace Main.Service
         /// </summary>
         public static bool HasDeckList
         {
-            get { return ES3.KeyExists(DECK_LIST); }
+            get { return false; }
         }
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace Main.Service
         /// </summary>
         public static List<DeckData> LoadDeckList()
         {
-            return ES3.Load<List<DeckData>>(DECK_LIST);
+            return null;
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace Main.Service
         /// </summary>
         public static void SaveDeckList(List<DeckData> deckList)
         {
-            ES3.Save<List<DeckData>>(DECK_LIST, deckList);
+            // ES3.Save<List<DeckData>>(DECK_LIST, deckList);
         }
     }
 }

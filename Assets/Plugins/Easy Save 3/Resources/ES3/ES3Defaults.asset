@@ -31,22 +31,22 @@ MonoBehaviour:
     assemblyNames:
     - UniRx
     - ES3
+    - PhotonUnityNetworking.Demos
+    - PhotonUnityNetworking.Utilities
     - UniTask
     - Assembly-CSharp
     - UniTask.Linq
+    - PhotonChat
+    - PhotonUnityNetworking
+    - PhotonRealtime
     - Assembly-CSharp-firstpass
     - UniTask.TextMeshPro
     - UniTask.DOTween
     - UniTask.Addressables
-    - PhotonUnityNetworking.Demos
-    - PhotonUnityNetworking.Utilities
-    - PhotonChat
-    - PhotonUnityNetworking
-    - PhotonRealtime
-    - UniTask.Editor
     - PhotonUnityNetworking.Editor
     - PunDemos.DemoHubEditor
     - PhotonUnityNetworking.Utilities.PhotonPlayer.Editor
+    - UniTask.Editor
     - PhotonUnityNetworking.Utilities.Culling.Editor
     - PunDemos.DemoSlotcarEditor
     showAdvancedSettings: 0

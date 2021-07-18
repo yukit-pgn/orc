@@ -21,8 +21,6 @@ namespace Main.View.Battle
         [SerializeField] Image ilustDouble2Image;
         [SerializeField] TextMeshProUGUI nameText;
         [SerializeField] TextMeshProUGUI explanationText;
-
-        CardData currentCardData;
         bool canShow;
 
         public void Setup()
@@ -37,11 +35,42 @@ namespace Main.View.Battle
         {
             if (!canShow) { return; }
 
-            currentCardData = cardData;
+            ShowCardData(cardData);
 
             frameRT.localScale = Vector3.zero;
             frameRT.DOScale(Vector3.one, 0.3f);
             gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// カード情報を取得して表示する
+        /// </summary>
+        async void ShowCardData(CardData cardData)
+        {
+            var cardDataService = CardDataService.Instance;
+            ilustBGImage.sprite = await cardDataService.GetConditionSprite(cardData.conditionID);
+            if (cardData.effect2ID == 0)
+            {
+                // 1効果カード用表示
+                ilustSingleImage.gameObject.SetActive(true);
+                ilustDouble1Image.gameObject.SetActive(false);
+                ilustDouble2Image.gameObject.SetActive(false);
+                ilustSingleImage.sprite = await cardDataService.GetEffectSprite(cardData.effect1ID);
+            }
+            else
+            {
+                // 2効果カード用表示
+                ilustSingleImage.gameObject.SetActive(false);
+                ilustDouble1Image.gameObject.SetActive(true);
+                ilustDouble2Image.gameObject.SetActive(true);
+                ilustDouble1Image.sprite = await cardDataService.GetEffectSprite(cardData.effect1ID);
+                ilustDouble2Image.sprite = await cardDataService.GetEffectSprite(cardData.effect2ID);
+            }
+            nameText.text = await cardDataService.GetCardName(cardData);
+            string conditionExplanation = (cardData.conditionID == 0) ? "なし" : (await cardDataService.GetConditionExplanation(cardData.conditionID));
+            string effect1Explanation = (cardData.effect1ID == 0) ? "なし" : (await cardDataService.GetEffectExplanation(cardData.effect1ID));
+            string effect2Explanation = (cardData.effect2ID == 0) ? "なし" : (await cardDataService.GetEffectExplanation(cardData.effect2ID));
+            explanationText.text = $"条件：{conditionExplanation}\n効果1：{effect1Explanation}\n効果2：{effect2Explanation}";
         }
 
         /// <summary>

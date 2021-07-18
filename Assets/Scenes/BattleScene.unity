@@ -4029,12 +4029,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   frameRT: {fileID: 1078832969}
-  ilustBGImage: {fileID: 0}
-  ilustSingleImage: {fileID: 0}
-  ilustDouble1Image: {fileID: 0}
-  ilustDouble2Image: {fileID: 0}
-  nameText: {fileID: 0}
-  explanationText: {fileID: 0}
+  ilustBGImage: {fileID: 1368589788}
+  ilustSingleImage: {fileID: 1882129537}
+  ilustDouble1Image: {fileID: 801366387}
+  ilustDouble2Image: {fileID: 505956363}
+  nameText: {fileID: 1981244167}
+  explanationText: {fileID: 895617446}
 --- !u!1 &1855175048
 GameObject:
   m_ObjectHideFlags: 0

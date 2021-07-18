@@ -127,6 +127,9 @@ namespace Main.Service
             return (await GetEffectData(id)).explanation;
         }
 
+        /// <summary>
+        /// IDから効果のスプライトを取得
+        /// </summary>
         public async UniTask<Sprite> GetEffectSprite(int id)
         {
             return await Addressables.LoadAssetAsync<Sprite>("Effect/" + id.ToString() + ".png");

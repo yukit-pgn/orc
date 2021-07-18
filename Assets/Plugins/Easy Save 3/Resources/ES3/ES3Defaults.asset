@@ -38,7 +38,17 @@ MonoBehaviour:
     - UniTask.TextMeshPro
     - UniTask.DOTween
     - UniTask.Addressables
+    - PhotonUnityNetworking.Demos
+    - PhotonUnityNetworking.Utilities
+    - PhotonChat
+    - PhotonUnityNetworking
+    - PhotonRealtime
     - UniTask.Editor
+    - PhotonUnityNetworking.Editor
+    - PunDemos.DemoHubEditor
+    - PhotonUnityNetworking.Utilities.PhotonPlayer.Editor
+    - PhotonUnityNetworking.Utilities.Culling.Editor
+    - PunDemos.DemoSlotcarEditor
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1

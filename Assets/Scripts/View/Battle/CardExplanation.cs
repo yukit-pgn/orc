@@ -21,7 +21,7 @@ namespace Main.View.Battle
         [SerializeField] Image ilustDouble2Image;
         [SerializeField] TextMeshProUGUI nameText;
         [SerializeField] TextMeshProUGUI explanationText;
-        bool canShow;
+        bool canShow = true;
 
         public void Setup()
         {

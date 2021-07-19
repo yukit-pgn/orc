@@ -116,8 +116,8 @@ namespace Main.Presenter.Battle
         /// </summary>
         void SetEvents()
         {
-            // 自分のCardの監視
-            myDeck.ForEach(SetMyCardEvents);
+            // // 自分のCardの監視
+            // myDeck.ForEach(SetMyCardEvents);
 
             // UIViewの監視
             uiView.OnClickAsObservable().Subscribe(type =>
@@ -235,6 +235,10 @@ namespace Main.Presenter.Battle
                 var cardGO = Instantiate(card_Prefab, pos, Quaternion.identity, deckParent);
                 var card = cardGO.GetComponent<Card>();
                 await card.Setup(cardData);
+                if (isMe)
+                {
+                    SetMyCardEvents(card);
+                }
                 deck.Add(card);
             }
         }
@@ -322,6 +326,7 @@ namespace Main.Presenter.Battle
             c.OnLongTapAsObservable().Subscribe(data =>
             {
                 cardExplanation.Show(data);
+                Debug.Log("Long Tap!");
             })
             .AddTo(this);
 

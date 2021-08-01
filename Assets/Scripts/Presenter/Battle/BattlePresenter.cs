@@ -609,6 +609,10 @@ namespace Main.Presenter.Battle
             {
                 await uiView.Lose();
             }
+
+            await UniTask.Delay(2000);
+
+            SceneService.ChangeScene("MenuScene", 1f);
         }
 
         /// <summary>

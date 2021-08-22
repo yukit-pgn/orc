@@ -22,6 +22,7 @@ namespace Main.View.Menu
         [SerializeField] RectTransform createMenuRT;
         [Header("BattleMenu")]
         [SerializeField] Button battleStartButton;
+        [SerializeField] Button onlineMatchButton;
         [Header("DeckMenu")]
         [SerializeField] GameObject cardInfo_Prefab;
         [SerializeField] Transform cardInfoParent;
@@ -57,6 +58,7 @@ namespace Main.View.Menu
             deckMenuButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.DeckMenu)).AddTo(this);
             createMenuButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.CreateMenu)).AddTo(this);
             battleStartButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.BattleStart)).AddTo(this);
+            onlineMatchButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.OnlineMatch)).AddTo(this);
             addButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.AddCard)).AddTo(this);
             loadDeckButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.LoadDeckData)).AddTo(this);
             saveDeckButton.OnClickAsObservable().Subscribe(_ => OnClick.OnNext(ButtonType.SaveDeckData)).AddTo(this);

@@ -5,6 +5,7 @@ using UnityEngine;
 using UniRx;
 using UniRx.Triggers;
 using Cysharp.Threading.Tasks;
+using Photon.Pun;
 using Main.Service;
 using Main.View.Menu;
 using Main.Model.Menu;
@@ -16,6 +17,7 @@ namespace Main.Presenter.Menu
     public class MenuPresenter : MonoBehaviour
     {
         [SerializeField] MenuUIView uiView;
+        [SerializeField] MatchingView matchingView;
         
         MenuModel menuModel;
 
@@ -79,6 +81,9 @@ namespace Main.Presenter.Menu
             // uiViewの監視
             uiView.OnClickAsObservable().Subscribe(OnClick).AddTo(this);
             uiView.OnValueChangedAsObservable().Subscribe(tpl => OnValueChanged(tpl.Item1, tpl.Item2)).AddTo(this);
+
+            // matchingViewの監視
+            matchingView.OnMatch.Subscribe(_ => BattleStart()).AddTo(this);
         }
 
         /// <summary>
@@ -105,7 +110,10 @@ namespace Main.Presenter.Menu
                     await uiView.ChangeMenu(MenuType.Create);
                     break;
                 case ButtonType.BattleStart:
-                    BattleStart();
+                    matchingView.PlayOffline();
+                    break;
+                case ButtonType.OnlineMatch:
+                    matchingView.PlayOnline();
                     break;
                 case ButtonType.AddCard:
                     var cardData = new CardData(menuModel.NewCardData);
@@ -152,6 +160,9 @@ namespace Main.Presenter.Menu
 
         void BattleStart()
         {
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.IsMessageQueueRunning = false;
+            
             SceneService.ChangeScene("BattleScene", 1f);
         }
 

@@ -7,6 +7,7 @@ using UniRx;
 using UniRx.Triggers;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using Photon.Pun;
 using Main.Model.Battle;
 using Main.View.Battle;
 using Main.Service;
@@ -39,7 +40,8 @@ namespace Main.Presenter.Battle
         CardDataService cardDataService;
         BattleModel myBattleModel;
         BattleModel enemyBattleModel;
-        Card selectedCard;
+
+        BattlePhotonView photonView;
 
         List<Card> myDeck = new List<Card>();
         List<Card> myHand = new List<Card>();
@@ -59,6 +61,8 @@ namespace Main.Presenter.Battle
             enemyDataService = EnemyDataService.Instance;
             cardDataService = CardDataService.Instance;
 
+            await SetupPhoton();
+
             SetUpModels();
 
             await SetUpViews();
@@ -70,6 +74,41 @@ namespace Main.Presenter.Battle
             SetUpdateEvents();
 
             Play();
+        }
+
+        async UniTask SetupPhoton()
+        {
+            // オフラインモード(仮)
+            // PhotonNetwork.OfflineMode = true;
+            // PhotonNetwork.JoinOrCreateRoom("Room", new Photon.Realtime.RoomOptions(), Photon.Realtime.TypedLobby.Default);
+            // await UniTask.WaitUntil(() => PhotonNetwork.CurrentRoom != null);
+
+            PhotonNetwork.IsMessageQueueRunning = true;
+
+            // CustomPropertiesの初期化
+            PhotonCustomPropertiesService.InitBattleProperties();
+
+            // photonViewのセットアップ
+            if(PhotonNetwork.IsMasterClient)
+            {
+                var go = PhotonNetwork.Instantiate("PhotonPrefab/BattlePhotonView", Vector3.zero, Quaternion.identity);
+                photonView = go.GetComponent<BattlePhotonView>();
+            }
+            else
+            {
+                await UniTask.WaitUntil(() =>
+                {
+                    photonView = GameObject.FindWithTag("PhotonView")?.GetComponent<BattlePhotonView>();
+                    return photonView != null;
+                });
+            }
+
+            // photonViewの監視
+            photonView.OnStartTurn.Subscribe(StartTurn).AddTo(this);
+            photonView.OnChangeTurn.Subscribe(ChangeTurn).AddTo(this);
+            photonView.OnEnemyDrawCard.Subscribe(EnemyDrawCard).AddTo(this);
+            photonView.OnUseCard.Subscribe(tpl => UseCard(tpl.Item1, tpl.Item2)).AddTo(this);
+            photonView.OnAddCard.Subscribe(tpl => AddCard(tpl.Item1, tpl.Item2, tpl.Item3).Forget()).AddTo(this);
         }
 
         /// <summary>
@@ -96,8 +135,11 @@ namespace Main.Presenter.Battle
             // 自分のデッキを読み込み
             await RefillDeck(true);
 
-            // 相手のデッキを読み込み
-            await RefillDeck(false);
+            if (PhotonNetwork.OfflineMode)
+            {                
+                // 相手のデッキを読み込み
+                await RefillDeck(false);
+            }
         }
 
         /// <summary>
@@ -116,9 +158,6 @@ namespace Main.Presenter.Battle
         /// </summary>
         void SetEvents()
         {
-            // // 自分のCardの監視
-            // myDeck.ForEach(SetMyCardEvents);
-
             // UIViewの監視
             uiView.OnClickAsObservable().Subscribe(type =>
             {
@@ -128,27 +167,12 @@ namespace Main.Presenter.Battle
                         if (isMyTurn)
                         {
                             uiView.SetButtonActive(ButtonType.TurnEnd, false);
-                            ChangeTurn(false);
+                            photonView.ChangeTurn(false);
                         }
                         break;
                 }
             })
             .AddTo(this);
-
-            // // cardExplanationの監視
-            // cardExplanation.OnUseAsObservable().Subscribe(data =>
-            // {
-            //     UseCard(true, data);
-            // })
-            // .AddTo(this);
-            // cardExplanation.OnBackAsObservable().Subscribe(_ =>
-            // {
-            //     if (isMyTurn)
-            //     {
-            //         SetMyHandSelectable(true);
-            //     }
-            // })
-            // .AddTo(this);
         }
 
         /// <summary>
@@ -165,12 +189,18 @@ namespace Main.Presenter.Battle
         {
             await UniTask.Delay(1000);
             // 手札を補充
-            await UniTask.WhenAll(DrawCard(true, 4), DrawCard(false, 4));
+            if (PhotonNetwork.OfflineMode)
+            {                    
+                await UniTask.WhenAll(DrawCard(true, 4), DrawCard(false, 4));
+            }
+            else
+            {
+                await DrawCard(true, 4);
+            }
             // 先攻決め
-            // isMyTurn = UnityEngine.Random.Range(0f, 1f) < 0.5f;
-            isMyTurn = true;
+            isMyTurn = PhotonCustomPropertiesService.IsFirstPlayer;
 
-            StartTurn(true);
+            photonView.StartTurn(true);
         }
 
         /// <summary>
@@ -194,7 +224,7 @@ namespace Main.Presenter.Battle
                 // ターンエンドボタンを有効化
                 uiView.SetButtonActive(ButtonType.TurnEnd, true);
             }
-            else
+            else if (PhotonNetwork.OfflineMode)
             {
                 AI();
             }
@@ -234,7 +264,7 @@ namespace Main.Presenter.Battle
                 cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
                 var cardGO = Instantiate(card_Prefab, pos, Quaternion.identity, deckParent);
                 var card = cardGO.GetComponent<Card>();
-                await card.Setup(cardData);
+                await card.Setup(Guid.NewGuid(), cardData);
                 if (isMe)
                 {
                     SetMyCardEvents(card);
@@ -243,14 +273,28 @@ namespace Main.Presenter.Battle
             }
         }
 
+        async void EnemyDrawCard(List<(Guid, CardData)> cardInfos)
+        {
+            var cards = new List<Card>();
+            foreach(var info in cardInfos)
+            {
+                var cardGO = Instantiate(card_Prefab, enemyDeckPosition, Quaternion.identity, enemyDeckParent);
+                var card = cardGO.GetComponent<Card>();
+                await card.Setup(info.Item1, info.Item2);
+                cards.Add(card);
+            }
+
+            await DrawCard(false, cards);
+        }
+
         /// <summary>
         /// デッキからカードをドローする
         /// </summary>
         async UniTask DrawCard(bool isMe, int count)
         {
+            if (count <= 0) { return; }
+
             var deck = isMe ? myDeck : enemyDeck;
-            var hand = isMe ? myHand : enemyHand;
-            var pos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
             if (deck == null) { return; }
 
             if (deck.Count < count)
@@ -260,15 +304,35 @@ namespace Main.Presenter.Battle
 
             var cards = deck.GetRange(0, count);
             deck.RemoveRange(0, count);
+
+            if (isMe && !PhotonNetwork.OfflineMode)
+            {
+                photonView.EnemyDrawCard(cards.Select(c => (c.CardID, c.CardData)).ToList());
+            }
+
+            await DrawCard(isMe, cards);
+        }
+
+        /// <summary>
+        /// デッキからカードをドローする
+        /// </summary>
+        async UniTask DrawCard(bool isMe, List<Card> cards)
+        {
+            if (cards == null) { return; }
+
+            var hand = isMe ? myHand : enemyHand;
+            var pos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
+            if (hand == null) { return; }
+
             var tasks = new List<UniTask>();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < cards.Count; i++)
             {
                 // var task1 = cards[i].TurnOver(true, 0.5f);
                 // var task2 = cards[i].Move(new Vector3(-3f + 3f * i, 0f, 0f), 0.5f);
 
                 // 自分のカードであれば表に返す
                 if (isMe) tasks.Add(cards[i].TurnOver(true, 0.5f));
-                tasks.Add(cards[i].Move(pos + Vector3.right * (-1.5f * (count - 1) + 3f * i), 0.5f));
+                tasks.Add(cards[i].Move(pos + Vector3.right * (-1.5f * (cards.Count - 1) + 3f * i), 0.5f));
 
                 await UniTask.Delay(250);
             }
@@ -326,7 +390,6 @@ namespace Main.Presenter.Battle
             c.OnLongTapAsObservable().Subscribe(data =>
             {
                 cardExplanation.Show(data);
-                Debug.Log("Long Tap!");
             })
             .AddTo(this);
 
@@ -340,11 +403,10 @@ namespace Main.Presenter.Battle
             {
                 cardExplanation.ResetCanShow();
 
-                if (tpl.Item2.y > 0f && tpl.Item1.cost <= myBattleModel.GetMP().Value && CheckCondition(true, tpl.Item1.conditionID))
+                if (tpl.Item2.y > 0f && tpl.Item1.CardData.cost <= myBattleModel.GetMP().Value && CheckCondition(true, tpl.Item1.CardData.conditionID))
                 {
-                    selectedCard = c;
                     SetMyHandSelectable(false);
-                    UseCard(true, tpl.Item1);
+                    photonView.UseCard(true, tpl.Item1.CardID);
                 }
                 else
                 {
@@ -390,7 +452,7 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// カードを使用する
         /// </summary>
-        async void UseCard(bool isMe, CardData cardData)
+        async void UseCard(bool isMe, Guid cardID)
         {
             var attackerModel = isMe ? myBattleModel : enemyBattleModel;
             // var defenderModel = isMe ? enemyBattleModel : myBattleModel;
@@ -398,28 +460,37 @@ namespace Main.Presenter.Battle
             var graveyardPos = isMe ? myCardGraveyardPosition : enemyCardGraveyardPosition;
             var hand = isMe ? myHand : enemyHand;
             var graveyard = isMe ? myGraveyard : enemyGraveyard;
+            if (attackerModel == null || hand == null || graveyard == null) { return; }
+
+            var card = hand.Find(c => c.CardID == cardID);
+            if (card == null)
+            {
+                Debug.LogError("指定のIDを持つカードが見つかりませんでした");
+                return;
+            }
+            var cardData = card.CardData;
 
             // ターン中使用カード数を加算
             attackerModel.IncreaseUsedHandCount();
 
             // 手札から削除し墓地に加える
-            hand.Remove(selectedCard);
-            graveyard.Add(selectedCard);
+            hand.Remove(card);
+            graveyard.Add(card);
 
             // 手札の位置を調整
             ArrangeHand(isMe).Forget();
 
             // カードを表示
-            selectedCard.Move(openPos, 0.3f).Forget();
+            card.Move(openPos, 0.3f).Forget();
             if (!isMe)
             {
                 // 相手のカードであれば表に返す
-                selectedCard.TurnOver(true, 0.3f).Forget();
+                card.TurnOver(true, 0.3f).Forget();
             }
             await UniTask.Delay(800);
 
             // カードを墓地に
-            selectedCard.Move(graveyardPos, 0.3f).Forget();
+            card.Move(graveyardPos, 0.3f).Forget();
 
             // MPを消費
             attackerModel.UseMp(cardData.cost);
@@ -519,15 +590,15 @@ namespace Main.Presenter.Battle
                 case 11:
                     await DrawCard(isMe, 1);
                     break;
-                case 12:
+                case 12:                        
                     var cardData = new CardData(0, 0, 9, 0);
-                    cardData.cost = await cardDataService.GetCardCost(cardData);
-                    await AddCard(isMe, cardData);
+                    cardData.cost = await cardDataService.GetCardCost(cardData); 
+                    await photonView.AddCard(isMe, Guid.NewGuid(), cardData);
                     break;
                 case 13:
                     cardData = new CardData(0, 0, 2, 0);
-                    cardData.cost = await cardDataService.GetCardCost(cardData);
-                    await AddCard(isMe, cardData);
+                    cardData.cost = await cardDataService.GetCardCost(cardData); 
+                    await photonView.AddCard(isMe, Guid.NewGuid(), cardData);
                     break;
                 case 14:
                     await DrawCard(isMe, 2);
@@ -546,7 +617,7 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// 特定のカードを手札に加える
         /// </summary>
-        async UniTask AddCard(bool isMe, CardData cardData)
+        async UniTask AddCard(bool isMe, Guid cardID, CardData cardData)
         {
             var hand = isMe ? myHand : enemyHand;
             var openPos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
@@ -554,7 +625,7 @@ namespace Main.Presenter.Battle
 
             var cardGO = Instantiate(card_Prefab, openPos, Quaternion.identity, myDeckParent);
             var card = cardGO.GetComponent<Card>();
-            await card.Setup(cardData, true);
+            await card.Setup(cardID, cardData, true);
 
             await UniTask.Delay(1000);
             
@@ -572,6 +643,8 @@ namespace Main.Presenter.Battle
             hand.Add(card);
 
             await ArrangeHand(isMe);
+
+            photonView.AddCardSuccess();
         }
 
         /// <summary>
@@ -628,17 +701,16 @@ namespace Main.Presenter.Battle
 
                 if(card.CardData.cost <= enemyBattleModel.GetMP().Value && CheckCondition(false, card.CardData.conditionID))
                 {
-                    selectedCard = card;
-                    UseCard(false, card.CardData);
+                    photonView.UseCard(false, card.CardID);
                 }
                 else
                 {
-                    ChangeTurn(true);
+                    photonView.ChangeTurn(true);
                 }
             }
             else
             {
-                ChangeTurn(true);
+                photonView.ChangeTurn(true);
             }
         }
     }

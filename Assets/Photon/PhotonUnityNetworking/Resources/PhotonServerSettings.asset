@@ -38,6 +38,11 @@ MonoBehaviour:
   - DestroySpaceship
   - Fire
   - RespawnSpaceship
+  - ChangeTurnRPC
+  - StartTurnRPC
+  - EnemyDrawCardRPC
+  - UseCardRPC
+  - AddCardRPC
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

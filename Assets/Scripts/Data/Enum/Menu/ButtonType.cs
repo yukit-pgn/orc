@@ -6,6 +6,7 @@
         DeckMenu,
         CreateMenu,
         BattleStart,
+        OnlineMatch,
         AddCard,
         LoadDeckData,
         SaveDeckData

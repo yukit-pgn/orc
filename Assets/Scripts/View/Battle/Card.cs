@@ -33,18 +33,22 @@ namespace Main.View.Battle
         // ドラッグ時イベント
         Subject<Unit> OnDrag = new Subject<Unit>();
         // タッチリリース時イベント
-        Subject<(CardData, Vector3)> OnRelease = new Subject<(CardData, Vector3)>();
+        Subject<(Card, Vector3)> OnRelease = new Subject<(Card, Vector3)>();
 
         // カードデータ
         public CardData CardData { get; private set; }
         // 選択可能か
         public bool Selectable { get; set; }
+        // カード識別ID
+        public Guid CardID { get; private set; }
 
         /// <summary>
         /// セットアップ
         /// </summary>
-        public async UniTask Setup(CardData cardData, bool front = false)
+        public async UniTask Setup(Guid cardID, CardData cardData, bool front = false)
         {
+            CardID = cardID;
+
             // 表裏の設定
             cardFront.SetActive(front);
             cardBack.SetActive(!front);
@@ -134,7 +138,7 @@ namespace Main.View.Battle
             if (!Selectable) return;
 
             transform.DOScale(Vector3.one, 0.3f);
-            OnRelease.OnNext((CardData, ScreenToWorldPoint(pointer.position)));
+            OnRelease.OnNext((this, ScreenToWorldPoint(pointer.position)));
         }
 
         /// <summary>
@@ -197,7 +201,7 @@ namespace Main.View.Battle
         /// <summary>
         /// タッチリリース時イベントを取得
         /// </summary>
-        public IObservable<(CardData, Vector3)> OnReleaseAsObservable()
+        public IObservable<(Card, Vector3)> OnReleaseAsObservable()
         {
             return OnRelease;
         }

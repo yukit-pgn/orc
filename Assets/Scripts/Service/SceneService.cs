@@ -7,7 +7,7 @@ using Cysharp.Threading.Tasks;
 
 namespace Main.Service
 {
-    public class SceneService : MonoBehaviour
+    public class SceneService
     {
         static Subject<Unit> OnLoadComplete = new Subject<Unit>();
 

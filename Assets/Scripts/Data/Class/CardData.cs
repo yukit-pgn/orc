@@ -10,6 +10,7 @@ namespace Main.Data
     /// </summary>
     public class CardData
     {
+        public static bool IsRegistered { get; private set; }
         // コスト
         public int cost;
         // 条件ID
@@ -44,6 +45,23 @@ namespace Main.Data
             return this.conditionID == cardData.conditionID &&
                 this.effect1ID == cardData.effect1ID &&
                 this.effect2ID == cardData.effect2ID;
+        }
+
+        public static object Deserialize(byte[] data)
+        {
+            return new CardData(data[0], data[1], data[2], data[3]);
+        }
+
+        public static byte[] Serialize(object cardData)
+        {
+            var c = (CardData)cardData;
+            return new byte[] { (byte)c.cost, (byte)c.conditionID, (byte)c.effect1ID, (byte)c.effect2ID };
+        }
+
+        public static void Register()
+        {
+            IsRegistered = true;
+            ExitGames.Client.Photon.PhotonPeer.RegisterType(typeof(CardData), 1, Serialize, Deserialize);
         }
     }
 }

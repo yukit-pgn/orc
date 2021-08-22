@@ -82,8 +82,15 @@ namespace Main.Presenter.Battle
             // PhotonNetwork.OfflineMode = true;
             // PhotonNetwork.JoinOrCreateRoom("Room", new Photon.Realtime.RoomOptions(), Photon.Realtime.TypedLobby.Default);
             // await UniTask.WaitUntil(() => PhotonNetwork.CurrentRoom != null);
+            Debug.Log("PhotonNetwork.OfflineMode" + PhotonNetwork.OfflineMode);
 
             PhotonNetwork.IsMessageQueueRunning = true;
+
+            // CardDataの登録
+            if (!CardData.IsRegistered)
+            {                    
+                CardData.Register();
+            }
 
             // CustomPropertiesの初期化
             PhotonCustomPropertiesService.InitBattleProperties();
@@ -166,6 +173,7 @@ namespace Main.Presenter.Battle
                     case ButtonType.TurnEnd:
                         if (isMyTurn)
                         {
+                            Debug.Log("Button ChangeTurn");
                             uiView.SetButtonActive(ButtonType.TurnEnd, false);
                             photonView.ChangeTurn(false);
                         }
@@ -200,7 +208,10 @@ namespace Main.Presenter.Battle
             // 先攻決め
             isMyTurn = PhotonCustomPropertiesService.IsFirstPlayer;
 
-            photonView.StartTurn(true);
+            if (PhotonNetwork.IsMasterClient)
+            {
+                photonView.StartTurn(true);
+            }
         }
 
         /// <summary>
@@ -235,6 +246,7 @@ namespace Main.Presenter.Battle
         /// </summary>
         void ChangeTurn(bool isMe)
         {
+            Debug.Log("Change Turn");
             isMyTurn = isMe;
             // カードを選択不能にする
             SetMyHandSelectable(false);
@@ -252,6 +264,7 @@ namespace Main.Presenter.Battle
             var pos = isMe ? myDeckPosition : enemyDeckPosition;
             var deckParent = isMe ? myDeckParent : enemyDeckParent;
             var deck = isMe ? myDeck : enemyDeck;
+            var battleModel = isMe ? myBattleModel : enemyBattleModel;
 
             // var cardDataList = new List<CardData>();
             // deckData.cardList.ForEach(c => cardDataList.Add(c));
@@ -264,7 +277,7 @@ namespace Main.Presenter.Battle
                 cardData.cost = await cardDataService.GetCardCost(cardData); // コストの修正
                 var cardGO = Instantiate(card_Prefab, pos, Quaternion.identity, deckParent);
                 var card = cardGO.GetComponent<Card>();
-                await card.Setup(Guid.NewGuid(), cardData);
+                await card.Setup(battleModel.CardIDGenerator(), cardData);
                 if (isMe)
                 {
                     SetMyCardEvents(card);
@@ -273,7 +286,7 @@ namespace Main.Presenter.Battle
             }
         }
 
-        async void EnemyDrawCard(List<(Guid, CardData)> cardInfos)
+        async void EnemyDrawCard(List<(int, CardData)> cardInfos)
         {
             var cards = new List<Card>();
             foreach(var info in cardInfos)
@@ -292,6 +305,7 @@ namespace Main.Presenter.Battle
         /// </summary>
         async UniTask DrawCard(bool isMe, int count)
         {
+            if (!isMe && !PhotonNetwork.OfflineMode) { return; }
             if (count <= 0) { return; }
 
             var deck = isMe ? myDeck : enemyDeck;
@@ -307,7 +321,7 @@ namespace Main.Presenter.Battle
 
             if (isMe && !PhotonNetwork.OfflineMode)
             {
-                photonView.EnemyDrawCard(cards.Select(c => (c.CardID, c.CardData)).ToList());
+                photonView.EnemyDrawCard(cards.Select(c => c.CardID).ToArray(), cards.Select(c => c.CardData).ToArray());
             }
 
             await DrawCard(isMe, cards);
@@ -452,7 +466,7 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// カードを使用する
         /// </summary>
-        async void UseCard(bool isMe, Guid cardID)
+        async void UseCard(bool isMe, int cardID)
         {
             var attackerModel = isMe ? myBattleModel : enemyBattleModel;
             // var defenderModel = isMe ? enemyBattleModel : myBattleModel;
@@ -515,7 +529,7 @@ namespace Main.Presenter.Battle
                 // if (myBattleModel.UsedHandCount )
                 SetMyHandSelectable(true);
             }
-            else
+            else if (PhotonNetwork.OfflineMode)
             {
                 AI();
             }
@@ -590,15 +604,21 @@ namespace Main.Presenter.Battle
                 case 11:
                     await DrawCard(isMe, 1);
                     break;
-                case 12:                        
-                    var cardData = new CardData(0, 0, 9, 0);
-                    cardData.cost = await cardDataService.GetCardCost(cardData); 
-                    await photonView.AddCard(isMe, Guid.NewGuid(), cardData);
+                case 12:
+                    if (isMe || PhotonNetwork.OfflineMode)
+                    {                           
+                        var cardData = new CardData(0, 0, 9, 0);
+                        cardData.cost = await cardDataService.GetCardCost(cardData); 
+                        await photonView.AddCard(isMe, attackerModel.CardIDGenerator(), cardData);
+                    }
                     break;
                 case 13:
-                    cardData = new CardData(0, 0, 2, 0);
-                    cardData.cost = await cardDataService.GetCardCost(cardData); 
-                    await photonView.AddCard(isMe, Guid.NewGuid(), cardData);
+                    if (isMe || PhotonNetwork.OfflineMode)
+                    {                           
+                        var cardData = new CardData(0, 0, 2, 0);
+                        cardData.cost = await cardDataService.GetCardCost(cardData); 
+                        await photonView.AddCard(isMe, attackerModel.CardIDGenerator(), cardData);
+                    }
                     break;
                 case 14:
                     await DrawCard(isMe, 2);
@@ -617,7 +637,7 @@ namespace Main.Presenter.Battle
         /// <summary>
         /// 特定のカードを手札に加える
         /// </summary>
-        async UniTask AddCard(bool isMe, Guid cardID, CardData cardData)
+        async UniTask AddCard(bool isMe, int cardID, CardData cardData)
         {
             var hand = isMe ? myHand : enemyHand;
             var openPos = isMe ? myCardOpenPosition : enemyCardOpenPosition;
@@ -693,6 +713,8 @@ namespace Main.Presenter.Battle
         /// </summary>
         async void AI()
         {
+            if (!PhotonNetwork.OfflineMode) { return; }
+
             await UniTask.Delay(UnityEngine.Random.Range(500, 1000));
 
             if (enemyHand.Count > 0 && enemyBattleModel.UsedHandCount < 2)

@@ -40,12 +40,12 @@ namespace Main.View.Battle
         // 選択可能か
         public bool Selectable { get; set; }
         // カード識別ID
-        public Guid CardID { get; private set; }
+        public int CardID { get; private set; }
 
         /// <summary>
         /// セットアップ
         /// </summary>
-        public async UniTask Setup(Guid cardID, CardData cardData, bool front = false)
+        public async UniTask Setup(int cardID, CardData cardData, bool front = false)
         {
             CardID = cardID;
 

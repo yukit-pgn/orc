@@ -30,6 +30,8 @@ namespace Main.Model.Battle
         // MP最大値
         public int MaxMP { get; private set; } = 0;
 
+        int cardID = 0;
+
         /// <summary>
         /// セットアップ
         /// </summary>
@@ -69,6 +71,11 @@ namespace Main.Model.Battle
         public void UseMp(int value)
         {
             mp.Value -= value;
+        }
+
+        public int CardIDGenerator()
+        {
+            return cardID++;
         }
 
         /// <summary>
